@@ -10,6 +10,12 @@ public:
     Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
     uint8_t r, g, b;
 
+    Color(const uint32_t& f) {
+        r = f & 0x00FF0000 >> 16;
+        g = f & 0x0000FF00 >> 8;
+        b = f & 0x000000FF;
+    }
+
     operator uint32_t() const {
         return ((uint32_t)r << 16) | ((uint32_t)g <<  8) | b;
     }
@@ -18,7 +24,14 @@ public:
 uint16_t time = 0;
 
 Color generator0(uint16_t time, uint16_t led) {
-    return Color(0, 0, 0);
+    time += led * 0x400 % 0x10000;
+
+    if(time < 0x8000) {
+        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, time / 0x80, 0xCF));
+    }
+    else {
+        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, (0xFFFF - time) / 0x80, 0xCF));
+    }
 }
 
 Color (*const generators[])(uint16_t, uint16_t) = {
