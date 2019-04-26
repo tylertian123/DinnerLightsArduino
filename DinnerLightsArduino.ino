@@ -32,14 +32,29 @@ unsigned long last;
 constexpr int LOOP_RATE = 50;
 constexpr unsigned long LOOP_DELAY = (1000 / LOOP_RATE);
 
+constexpr int BUTTON_PIN = 5;
+
 void setup() {
     leds.begin();
     leds.clear();
     leds.show();
+
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
     last = millis();
 }
 
 void loop() {
+    if(digitalRead(BUTTON_PIN) == LOW) {
+        time = 0;
+        mode ++;
+        if(mode >= MODE_COUNT) {
+            mode = 0;
+        }
+        
+        delay(10);
+        while(digitalRead(BUTTON_PIN) == LOW);
+    }
+
     for(uint16_t i = 0; i < LED_COUNT; i ++) {
         leds.setPixelColor(i, static_cast<uint32_t>(generators[mode](time, i)));
     }
