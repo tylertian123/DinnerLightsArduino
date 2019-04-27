@@ -1,7 +1,7 @@
 #include <Adafruit_NeoPixel.h>
 
 constexpr int LED_PIN = 6;
-constexpr int LED_COUNT = 300;
+constexpr int LED_COUNT = 78;
 
 Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB | NEO_KHZ800);
 
@@ -27,6 +27,13 @@ public:
             b * percentage / 100
         );
     }
+    Color applyBrightness255(uint8_t brightness) const {
+        return Color(
+            r * brightness / 255,
+            g * brightness / 255,
+            b * brightness / 255
+        );
+    }
 };
 
 uint16_t time = 0;
@@ -49,13 +56,46 @@ Color generator0(uint16_t time, uint16_t led) {
     }
 }
 
+constexpr int TIME_PER_LED = (0x7C00 / (LED_COUNT / 2));
+Color generator1(uint16_t time, uint16_t led) {
+    uint16_t timeWhenOn;
+    if(led < LED_COUNT / 2) {
+        timeWhenOn = led * TIME_PER_LED;
+    }
+    else {
+        timeWhenOn = (LED_COUNT - led) * TIME_PER_LED;
+    }
+    if(time < 0x8000) {
+        if(time >= timeWhenOn) {
+            return Color(171, 75, 152);
+        }
+        else {
+            return Color(0, 0, 0);
+        }
+    }
+    else {
+        if(0xFFFF - time >= timeWhenOn) {
+            return Color(171, 75, 152);
+        }
+        else {
+            return Color(0, 0, 0);
+        }
+    }
+}
+
 Color generatorOff(uint16_t time, uint16_t led) {
     return Color(0, 0, 0);
 }
 
 Color (*const generators[])(uint16_t, uint16_t) = {
     &generator0,
+    &generator1,
     &generatorOff,
+};
+const uint16_t timeIncrements[] = {
+    0x100,
+    0x80,
+    0x00,
 };
 
 constexpr size_t MODE_COUNT = sizeof(generators) / sizeof(generators[0]);
@@ -70,6 +110,7 @@ constexpr int BRIGHTNESS_UP_BUTTON_PIN = 4;
 constexpr int BRIGHTNESS_DOWN_BUTTON_PIN = 3;
 
 void setup() {
+    Serial.begin(9600);
     leds.begin();
     leds.clear();
     leds.show();
@@ -116,7 +157,7 @@ void loop() {
     for(uint16_t i = 0; i < LED_COUNT; i ++) {
         leds.setPixelColor(i, static_cast<uint32_t>(generators[mode](time, i).applyBrightness(brightness)));
     }
-    time += 0x100;
+    time += timeIncrements[mode];
     leds.show();
     // Maintain constant refresh rate if possible
     if(millis() < last + LOOP_DELAY) {
