@@ -40,8 +40,13 @@ Color generator0(uint16_t time, uint16_t led) {
     }
 }
 
+Color generatorOff(uint16_t time, uint16_t led) {
+    return Color(0, 0, 0);
+}
+
 Color (*const generators[])(uint16_t, uint16_t) = {
     &generator0,
+    &generatorOff,
 };
 
 constexpr size_t MODE_COUNT = sizeof(generators) / sizeof(generators[0]);
