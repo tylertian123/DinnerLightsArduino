@@ -11,9 +11,9 @@ public:
     uint8_t r, g, b;
 
     Color(const uint32_t& f) {
-        r = f & 0x00FF0000 >> 16;
-        g = f & 0x0000FF00 >> 8;
-        b = f & 0x000000FF;
+        r = (f & 0x00FF0000) >> 16;
+        g = (f & 0x0000FF00) >> 8;
+        b = (f & 0x000000FF);
     }
 
     operator uint32_t() const {
@@ -67,11 +67,10 @@ void loop() {
         delay(10);
         while(digitalRead(BUTTON_PIN) == LOW);
     }
-
     for(uint16_t i = 0; i < LED_COUNT; i ++) {
         leds.setPixelColor(i, static_cast<uint32_t>(generators[mode](time, i)));
     }
-    time += 0x80;
+    time += 0x100;
     leds.show();
 
     if(millis() < last + LOOP_DELAY) {
