@@ -26,11 +26,17 @@ uint16_t time = 0;
 Color generator0(uint16_t time, uint16_t led) {
     time += led * 0x400 % 0x10000;
 
-    if(time < 0x8000) {
-        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, time / 0x80, 0xCF));
+    if(time < 0x6000) {
+        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, time / 0x60, 0xA0));
+    }
+    else if(time < 0x8000) {
+        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, 0xFF, 0xA0));
+    }
+    else if(time < 0xE000) {
+        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, (0xDFFF - time) / 0x60, 0xA0));
     }
     else {
-        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, (0xFFFF - time) / 0x80, 0xCF));
+        return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, 0x00, 0xA0));
     }
 }
 
