@@ -19,9 +19,18 @@ public:
     operator uint32_t() const {
         return ((uint32_t)r << 16) | ((uint32_t)g <<  8) | b;
     }
+
+    Color applyBrightness(uint8_t percentage) const {
+        return Color(
+            r * percentage / 100,
+            g * percentage / 100,
+            b * percentage / 100
+        );
+    }
 };
 
 uint16_t time = 0;
+uint8_t brightness = 80;
 
 Color generator0(uint16_t time, uint16_t led) {
     time += led * 0x400 % 0x10000;
@@ -56,19 +65,24 @@ unsigned long last;
 constexpr int LOOP_RATE = 50;
 constexpr unsigned long LOOP_DELAY = (1000 / LOOP_RATE);
 
-constexpr int BUTTON_PIN = 5;
+constexpr int MODE_BUTTON_PIN = 5;
+constexpr int BRIGHTNESS_UP_BUTTON_PIN = 4;
+constexpr int BRIGHTNESS_DOWN_BUTTON_PIN = 3;
 
 void setup() {
     leds.begin();
     leds.clear();
     leds.show();
 
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(MODE_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BRIGHTNESS_UP_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BRIGHTNESS_DOWN_BUTTON_PIN, INPUT_PULLUP);
     last = millis();
 }
 
 void loop() {
-    if(digitalRead(BUTTON_PIN) == LOW) {
+    // Poll buttons
+    if(!digitalRead(MODE_BUTTON_PIN)) {
         time = 0;
         mode ++;
         if(mode >= MODE_COUNT) {
@@ -76,14 +90,35 @@ void loop() {
         }
         
         delay(10);
-        while(digitalRead(BUTTON_PIN) == LOW);
+        while(!digitalRead(MODE_BUTTON_PIN));
     }
+    if(!digitalRead(BRIGHTNESS_UP_BUTTON_PIN)) {
+        brightness += 10;
+        if(brightness > 100) {
+            brightness -= 100;
+        }
+        
+        delay(10);
+        while(!digitalRead(BRIGHTNESS_UP_BUTTON_PIN));
+    }
+    if(!digitalRead(BRIGHTNESS_DOWN_BUTTON_PIN)) {
+        if(brightness >= 10) {
+            brightness -= 10;
+        }
+        else {
+            brightness += 90; // +100 to loop over and -10
+        }
+        
+        delay(10);
+        while(!digitalRead(BRIGHTNESS_DOWN_BUTTON_PIN));
+    }
+    // Generate colors
     for(uint16_t i = 0; i < LED_COUNT; i ++) {
-        leds.setPixelColor(i, static_cast<uint32_t>(generators[mode](time, i)));
+        leds.setPixelColor(i, static_cast<uint32_t>(generators[mode](time, i).applyBrightness(brightness)));
     }
     time += 0x100;
     leds.show();
-
+    // Maintain constant refresh rate if possible
     if(millis() < last + LOOP_DELAY) {
         delay(last + LOOP_DELAY - millis());
     }
