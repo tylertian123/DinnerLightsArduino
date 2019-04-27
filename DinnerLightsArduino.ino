@@ -1,7 +1,7 @@
 #include <Adafruit_NeoPixel.h>
 
 constexpr int LED_PIN = 6;
-constexpr int LED_COUNT = 78;
+constexpr int LED_COUNT = 300;
 
 Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB | NEO_KHZ800);
 
@@ -37,10 +37,11 @@ public:
 };
 
 uint16_t time = 0;
-uint8_t brightness = 80;
+uint8_t brightness = 50;
 
 Color generator0(uint16_t time, uint16_t led) {
-    time += led * 0x400 % 0x10000;
+    time += led * 0x400;
+    time %= 0x10000;
 
     if(time < 0x6000) {
         return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(0xA000, time / 0x60, 0xA0));
@@ -83,6 +84,12 @@ Color generator1(uint16_t time, uint16_t led) {
     }
 }
 
+Color generator2(uint16_t time, uint16_t led) {
+    time += led * 0x400;
+    time %= 0x10000;
+    return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(time));
+}
+
 Color generatorOff(uint16_t time, uint16_t led) {
     return Color(0, 0, 0);
 }
@@ -90,11 +97,13 @@ Color generatorOff(uint16_t time, uint16_t led) {
 Color (*const generators[])(uint16_t, uint16_t) = {
     &generator0,
     &generator1,
+    &generator2,
     &generatorOff,
 };
 const uint16_t timeIncrements[] = {
-    0x100,
+    0x200,
     0x80,
+    0x100,
     0x00,
 };
 
