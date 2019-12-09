@@ -90,29 +90,63 @@ Color generator2(uint16_t time, uint16_t led) {
     return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(time));
 }
 
+Color generator3(uint16_t time, uint16_t led) {
+	uint16_t timeWhenOn;
+    if(led < LED_COUNT / 2) {
+        timeWhenOn = led * TIME_PER_LED;
+    }
+    else {
+        timeWhenOn = (LED_COUNT - led) * TIME_PER_LED;
+    }
+    if(time < 0x8000) {
+        if(time >= timeWhenOn) {
+        	time += led * 0x800;
+    		time %= 0x10000;
+            return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(time));
+        }
+        else {
+            return Color(0, 0, 0);
+        }
+    }
+    else {
+        if(0xFFFF - time >= timeWhenOn) {
+            time += led * 0x800;
+    		time %= 0x10000;
+            return Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::ColorHSV(time));
+        }
+        else {
+            return Color(0, 0, 0);
+        }
+    }
+}
+
 Color generatorOff(uint16_t time, uint16_t led) {
     return Color(0, 0, 0);
 }
 
 Color (*const generators[])(uint16_t, uint16_t) = {
+	&generatorOff,
     &generator0,
     &generator1,
     &generator2,
-    &generatorOff,
+    &generator3,
 };
 const uint16_t timeIncrements[] = {
+	0x00,
     0x200,
     0x80,
-    0x100,
-    0x00,
+    0x200,
+    0xA0,
 };
 
 constexpr size_t MODE_COUNT = sizeof(generators) / sizeof(generators[0]);
 size_t mode = 0;
 
 unsigned long last;
+unsigned long iterations = 0;
 constexpr int LOOP_RATE = 50;
 constexpr unsigned long LOOP_DELAY = (1000 / LOOP_RATE);
+constexpr int MAX_ITERATIONS = 500;
 
 constexpr int MODE_BUTTON_PIN = 5;
 constexpr int BRIGHTNESS_UP_BUTTON_PIN = 4;
@@ -168,7 +202,20 @@ void loop() {
     }
     time += timeIncrements[mode];
     leds.show();
-    // Maintain constant refresh rate if possible
+
+	if(mode != 0) {
+	    iterations ++;
+	    if(iterations >= MAX_ITERATIONS) {
+	    	iterations = 0;
+	    	time = 0;
+	        mode ++;
+	        if(mode >= MODE_COUNT) {
+	            mode = 1;
+	        }
+	    }
+	}
+
+	// Maintain constant refresh rate if possible
     if(millis() < last + LOOP_DELAY) {
         delay(last + LOOP_DELAY - millis());
     }
